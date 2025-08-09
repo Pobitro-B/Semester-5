@@ -1,0 +1,16 @@
+Audacity
+Python speech features
+Keras/torch
+Tesseract
+Yolo
+
+
+Skipped and targeted language modelling
+
+15% can be masked in bert
+
+ELMo
+
+Text -> Token -> Encoding
+
+f(word representation + segmentation) - y
