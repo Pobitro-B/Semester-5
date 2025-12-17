@@ -1,0 +1,66 @@
+buffer manager - replaces mmu for the dbms
+
+page writer
+
+
+
+Indices creation - helps reduce query time
+
+
+
+**Indices:**
+
+CREATE INDEX ON Tname (cName1, cName2, ...);
+
+-> Make some queries faster (search queries)
+
+-> Indices can be created on non-unique columns as well
+
+-> Self modifying, self stabilizing
+
+-> Index + Balance Tree data structure
+
+
+
+**->Balance Tree and B Trees**
+
+-->multiple insertion deletion on binary search trees can make the tree skewed
+
+-->B Tree is a class of trees (incl. B+ trees, b linked trees, etc.)
+
+-->Hash tables are good for point queries and not for range queries.
+
+
+
+**->B+ trees**
+
+-->stored on the disk
+
+-->set: how many children each node can have
+
+-->Rule: Internal nodes should be half full (except root)
+
+**+-+-------------+-+-------------+-+-------------+-+---+-+**
+
+**|1|      x1     |2|      x2     |3|      x3     |4|...|n|<==>**
+
+**+-+-------------+-+-------------+-+-------------+-+---+-+**
+
+**/ 		 /		 / 		 /**
+
+-->1,2,3,4,...,n-1 are pointers to children, n is a pointer to sibling, 1 points to nums st. n < x1, 2 points to x1<n<x2, ...
+
+-->x1, x2, x3 are not data. The data is present ONLY in the leaf nodes of the tree
+
+
+
+-->Insert delete, search, all happens in O(logm n) = log n base m
+
+-->max 5-6 levels, all data nodes are at same level leaf nodes.
+
+-->if we see leaves from one end to another, we get the data in sorted order. This helps in range queries
+
+--> If current node is filled and you want to insert, split the current node into two parts, make space, insert, update parent.
+
+--> I current node is empty, and you want to delete, delete the node, check threshold, take from neighbour, check threshold again, merge, update parent.
+

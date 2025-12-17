@@ -1,0 +1,101 @@
+CREATE OR REPLACE VIEW leg AS
+SELECT
+    s1.train AS train,
+    s1.station AS from_station,
+    s2.station AS to_station
+FROM schedule s1
+JOIN schedule s2
+    ON s1.train = s2.train
+   AND (
+        s1.arrdate < s2.arrdate
+        OR (
+            s1.arrdate = s2.arrdate
+            AND s1.dep < s2.arr
+        )
+   );
+
+CREATE OR REPLACE VIEW direct_route AS
+SELECT
+    A.station AS StationA,
+    B.station AS StationB,
+    L.train AS Train1,
+    NULL AS Change1,
+    NULL AS Train2,
+    NULL AS Change2,
+    NULL AS Train3
+FROM terminus A
+JOIN terminus B ON A.station <> B.station
+JOIN leg L
+    ON L.from_station = A.station
+   AND L.to_station = B.station;
+
+CREATE OR REPLACE VIEW one_change AS
+SELECT
+    A.station AS StationA,
+    B.station AS StationB,
+    L1.train AS Train1,
+    L1.to_station AS Change1,
+    L2.train AS Train2,
+    NULL AS Change2,
+    NULL AS Train3
+FROM terminus A
+JOIN terminus B ON A.station <> B.station
+JOIN leg L1 ON L1.from_station = A.station
+JOIN leg L2 ON L2.from_station = L1.to_station
+           AND L2.to_station = B.station
+           AND L1.train <> L2.train;
+
+CREATE OR REPLACE VIEW two_change AS
+SELECT
+    A.station AS StationA,
+    B.station AS StationB,
+    L1.train AS Train1,
+    L1.to_station AS Change1,
+    L2.train AS Train2,
+    L2.to_station AS Change2,
+    L3.train AS Train3
+FROM terminus A
+JOIN terminus B ON A.station <> B.station
+JOIN leg L1 ON L1.from_station = A.station
+JOIN leg L2 ON L2.from_station = L1.to_station
+           AND L2.train <> L1.train
+JOIN leg L3 ON L3.from_station = L2.to_station
+           AND L3.to_station = B.station
+           AND L3.train NOT IN (L1.train, L2.train);
+
+CREATE OR REPLACE VIEW three_change AS
+SELECT
+    A.station AS StationA,
+    B.station AS StationB,
+    L1.train AS Train1,
+    L1.to_station AS Change1,
+    L2.train AS Train2,
+    L2.to_station AS Change2,
+    L3.train AS Train3,
+    L4.train AS Train4
+FROM terminus A
+JOIN terminus B ON A.station <> B.station
+JOIN leg L1 ON L1.from_station = A.station
+JOIN leg L2 ON L2.from_station = L1.to_station
+           AND L2.train <> L1.train
+JOIN leg L3 ON L3.from_station = L2.to_station
+           AND L3.train NOT IN (L1.train, L2.train)
+JOIN leg L4 ON L4.from_station = L3.to_station
+           AND L4.to_station = B.station
+           AND L4.train NOT IN (L1.train, L2.train, L3.train);
+
+SELECT DISTINCT * FROM direct_route
+UNION ALL
+SELECT DISTINCT * FROM one_change
+UNION ALL
+SELECT DISTINCT * FROM two_change;
+
+SELECT DISTINCT * FROM direct_route
+UNION ALL
+SELECT DISTINCT * FROM one_change
+UNION ALL
+SELECT DISTINCT * FROM two_change
+UNION ALL
+SELECT DISTINCT * FROM three_change;
+
+--- Better

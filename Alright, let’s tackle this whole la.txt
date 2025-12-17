@@ -1,0 +1,203 @@
+Alright, let’s tackle this whole lab sheet like a boss — with clean, correct queries and just enough pep to keep your neurons entertained. Here are all five solutions, ready to drop into your submission file.
+
+---
+
+# ✅ **1. Recursive CTE for Organizational Hierarchy**
+
+```sql
+WITH RECURSIVE hierarchy AS (
+    -- Anchor: CEO (no manager)
+    SELECT 
+        employee_id,
+        employee_name,
+        manager_id,
+        0 AS level
+    FROM employees
+    WHERE manager_id IS NULL
+    
+    UNION ALL
+    
+    -- Recursive step
+    SELECT 
+        e.employee_id,
+        e.employee_name,
+        e.manager_id,
+        h.level + 1 AS level
+    FROM employees e
+    INNER JOIN hierarchy h 
+        ON e.manager_id = h.employee_id
+)
+SELECT *
+FROM hierarchy
+ORDER BY level, employee_id;
+```
+
+---
+
+# ✅ **2. Window Functions: 7-Day Moving Average + % Change**
+
+```sql
+SELECT 
+    product_id,
+    sale_date,
+    sale_amount,
+    
+    -- 7-day moving average
+    AVG(sale_amount) OVER (
+        PARTITION BY product_id
+        ORDER BY sale_date
+        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+    ) AS moving_avg_7d,
+    
+    -- Percent change from previous day
+    (sale_amount - LAG(sale_amount) OVER (
+        PARTITION BY product_id
+        ORDER BY sale_date
+    )) 
+    / NULLIF(LAG(sale_amount) OVER (
+        PARTITION BY product_id
+        ORDER BY sale_date
+    ), 0) * 100 AS pct_change
+FROM sales
+ORDER BY product_id, sale_date;
+```
+
+---
+
+# ✅ **3. Indexing Strategy for Query Optimization**
+
+### 📌 **Given Query**
+
+```sql
+SELECT c.customer_name, p.product_name, o.order_date
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+JOIN products p ON o.product_id = p.product_id
+WHERE c.customer_segment = 'Premium'
+  AND p.product_category = 'Electronics'
+  AND o.order_date BETWEEN '2023-01-01' AND '2023-12-31';
+```
+
+### 📌 **Indexes to Create**
+
+### **a) On customers table**
+
+```sql
+CREATE INDEX idx_customers_segment_id
+ON customers (customer_segment, customer_id);
+```
+
+**Why?**
+
+* Filter on `customer_segment`
+* Join on `customer_id`
+* This index makes filtering *and* joining efficient.
+
+---
+
+### **b) On products table**
+
+```sql
+CREATE INDEX idx_products_category_id
+ON products (product_category, product_id);
+```
+
+**Why?**
+
+* Filter on `product_category`
+* Join on `product_id`
+* Same logic as above.
+
+---
+
+### **c) On orders table**
+
+```sql
+CREATE INDEX idx_orders_date_customer_product
+ON orders (order_date, customer_id, product_id);
+```
+
+**Why?**
+
+* Big date range filter on `order_date`
+* Joins on `customer_id` & `product_id`
+* The ordering in index matches filtering → fastest execution.
+
+---
+
+### 📌 **Covering Index Concept**
+
+A **covering index** contains *all columns* needed by the query so the database never touches the base table.
+
+For example, on orders:
+
+```sql
+CREATE INDEX idx_orders_cover
+ON orders (order_date, customer_id, product_id)
+INCLUDE (order_date);
+```
+
+You could also include more columns (e.g., if returning additional fields).
+**This eliminates table lookups entirely → maximum performance.**
+
+---
+
+# ✅ **4. MongoDB Aggregation Pipeline**
+
+```javascript
+db.articles.aggregate([
+    // 4.a Filter articles with > 1000 views
+    { $match: { views: { $gt: 1000 } } },
+
+    // 4.b Unwind tags
+    { $unwind: "$tags" },
+
+    // 4.c Group by tag
+    {
+        $group: {
+            _id: "$tags",
+            avg_comments: { $avg: { $size: "$comments" } },
+            avg_likes: { 
+                $avg: { 
+                    $sum: "$comments.likes" 
+                } 
+            }
+        }
+    },
+
+    // 4.d Sort by avg likes descending
+    { $sort: { avg_likes: -1 } }
+]);
+```
+
+---
+
+# ✅ **5. MongoDB Geospatial Query**
+
+### 📌 **Create 2dsphere Index**
+
+```javascript
+db.restaurants.createIndex({ location: "2dsphere" });
+```
+
+---
+
+### 📌 **Find Restaurants Within 5 km of Point**
+
+```javascript
+db.restaurants.find({
+    location: {
+        $near: {
+            $geometry: { 
+                type: "Point", 
+                coordinates: [-73.98, 40.77]
+            },
+            $maxDistance: 5000   // meters
+        }
+    }
+});
+```
+
+---
+
+If you want, I can bundle all these into a neat `.txt` output you can directly upload.

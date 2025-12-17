@@ -1,0 +1,41 @@
+Part 1: Simple Retrieval (SELECT, WHERE, ORDER BY)
+1. 
+select sname, gpa from Students where discipline = 'Physics';
+
+2.
+select cname, credits from Courses where credits = 4;
+
+3.
+select sid, cid from Enrolled where grade='F';
+
+4.
+select sname, discipline from Students order by discipline, sname;
+
+Part 2.
+1.
+ select Students.sname from Students Natural join Enrolled where cid='CSL303';
+
+2.
+ select Courses.cname from (select Enrolled.cid from Enrolled Natural Join Students where Students.sname = 'Ben Taylor') Natural Join Courses;
+
+3.
+select T1.sname, T1.grade, Courses.cname from (select Students.sname, Enrolled.grade from Students Natural Join Enrolled) as T1 Natural Join Courses;
+
+4.
+select Students.sname from Students Left Join Enrolled on Students.sid = Enrolled.sid where cid is NULL;
+
+5.
+select Distinct T1.sname from (select Students.sname, Enrolled.grade from Students Natural Join Enrolled) as T1 Natural Join Courses where (T1.grade = 'B' and Courses.credits = 3);
+
+Part 3.
+1.
+select discipline, count(sid) from Students group by discipline;
+
+2.
+select credits, count(cid) from Courses group by credits;
+
+3.
+select Courses.cname, count(Enrolled.sid) from Enrolled Natural Join Courses group by Courses.cname;
+
+4.
+select cid from Enrolled where grade ='A' group by cid having count(sid)>2;
